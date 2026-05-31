@@ -13,7 +13,7 @@ def fetch_fred_history(api_key):
     metrics = {
         "GDP Growth QoQ (%)": {"id": "GDPC1", "units": "pch", "divide": 1},
         "Retail Sales MoM (%)": {"id": "RSAFS", "units": "pch", "divide": 1},      
-        "Consumer Confidence": {"id": "UMCSENT", "units": "lin", "divide": 1},
+        "Personal Income MoM (%)": {"id": "PI", "units": "pch", "divide": 1},
         "CPI YoY (%)": {"id": "CPIAUCSL", "units": "pc1", "divide": 1},             
         "PPI YoY (%)": {"id": "PPIFIS", "units": "pc1", "divide": 1},               
         "PCE YoY (%)": {"id": "PCEPI", "units": "pc1", "divide": 1},             

@@ -20,7 +20,7 @@ def fetch_finnhub_forecasts(api_key):
     results = {
         "GDP Growth QoQ": {"value": "N/A", "forecast": "N/A", "difference": 0},
         "Retail Sales MoM": {"value": "N/A", "forecast": "N/A", "difference": 0},
-        "Consumer Confidence": {"value": "N/A", "forecast": "N/A", "difference": 0},
+        "Real Personal Income MoM": {"value": "N/A", "forecast": "N/A", "difference": 0},
         "CPI YoY": {"value": "N/A", "forecast": "N/A", "difference": 0},
         "PPI YoY": {"value": "N/A", "forecast": "N/A", "difference": 0},
         "PCE YoY": {"value": "N/A", "forecast": "N/A", "difference": 0},

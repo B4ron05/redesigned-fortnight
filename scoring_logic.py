@@ -14,7 +14,7 @@ def evaluate_bias(asset, metric_name, difference):
     bonds = ["10-YR TREASURY"]
 
     # --- 1. GROWTH & CONSUMPTION BLOCK ---
-    if metric_name in ["GDP Growth QoQ", "Retail Sales MoM", "Consumer Confidence"]:
+    if metric_name in ["GDP Growth QoQ", "Retail Sales MoM", "Personal Income MoM"]:
         if difference > 0:
             if asset in equities or asset in usd or asset in energy: return "Bullish", BULLISH
             if asset in metals or asset in bonds: return "Bearish", BEARISH

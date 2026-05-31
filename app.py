@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
-import finnhub_calendar
 import cot_data
 import technical_data
 import historical_data
 import scoring_logic
 import altair as alt
+import forecast_manager # --- NEW IMPORT ---
 
 st.set_page_config(page_title="Project Macro", layout="wide")
 st.title("Macro analyzer 🎯")
@@ -40,10 +40,6 @@ def custom_metric_card(label, value, difference, asset, forecast=None, suffix=""
 
 # --- DASHBOARD RENDERING ENGINE ---
 def render_dashboard(macro, tech, cot, selected_asset, mode="Surprise"):
-    """
-    Dynamically renders the entire scorecard. 
-    Accepts either Finnhub (Surprise) or FRED (Momentum) dictionaries.
-    """
     score_map = {"Bullish": 1, "Bearish": -1, "Neutral": 0}
     category_averages = []
     
@@ -62,7 +58,7 @@ def render_dashboard(macro, tech, cot, selected_asset, mode="Surprise"):
         
     # Macro Data
     metric_groups = {
-        "Growth": ["GDP Growth QoQ", "Retail Sales MoM", "Consumer Confidence"],
+        "Growth": ["GDP Growth QoQ", "Retail Sales MoM", "Personal Income MoM"],
         "Inflation": ["CPI YoY", "PPI YoY", "PCE YoY", "10 Yr Yield (21d SMA)"],
         "Jobs": ["Non-Farm Payroll", "Unemployment Rate %", "Weekly Jobless Claims", "JOLTS Job Openings"]
     }
@@ -117,7 +113,7 @@ def render_dashboard(macro, tech, cot, selected_asset, mode="Surprise"):
     g1, g2, g3, g4 = st.columns(4)
     with g1: custom_metric_card("GDP Growth QoQ", macro['GDP Growth QoQ']['value'], macro['GDP Growth QoQ']['difference'], selected_asset, forecast=macro['GDP Growth QoQ']['forecast'], suffix="%", mode=mode)
     with g2: custom_metric_card("Retail Sales MoM", macro['Retail Sales MoM']['value'], macro['Retail Sales MoM']['difference'], selected_asset, forecast=macro['Retail Sales MoM']['forecast'], suffix="%", mode=mode)
-    with g3: custom_metric_card("Consumer Confidence", macro['Consumer Confidence']['value'], macro['Consumer Confidence']['difference'], selected_asset, forecast=macro['Consumer Confidence']['forecast'], suffix="", mode=mode)
+    with g3: custom_metric_card("Personal Income MoM", macro['Personal Income MoM']['value'], macro['Personal Income MoM']['difference'], selected_asset, forecast=macro['Personal Income MoM']['forecast'], suffix="", mode=mode)
 
     st.divider()
     st.subheader("🔥 Inflation Bias")
@@ -148,9 +144,6 @@ def render_dashboard(macro, tech, cot, selected_asset, mode="Surprise"):
 
 # --- CACHING FUNCTIONS ---
 @st.cache_data(ttl=3600, show_spinner=False)
-def get_cached_macro(api_key): return finnhub_calendar.fetch_finnhub_forecasts(api_key)
-
-@st.cache_data(ttl=3600, show_spinner=False)
 def get_cached_cot(ticker): return cot_data.fetch_cot_data(ticker)
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -159,7 +152,6 @@ def get_cached_technicals(ticker, opt_ticker, asset_name): return technical_data
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_cached_yield(): return technical_data.fetch_yield_trend("^TNX")
 
-# FIX 1: Removed 'limit' parameter so dragging the slider doesn't cache-bust FRED
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_cached_history(api_key): return historical_data.fetch_fred_history(api_key)
 
@@ -167,11 +159,9 @@ def get_cached_history(api_key): return historical_data.fetch_fred_history(api_k
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("🧠 Quant Brain Settings")
-    # FIX 2: Wrapped the entire input block in a form to prevent Keystroke Multiplier requests
     with st.form("api_settings_form"):
         st.subheader("API Connections")
-        finnhub_key = st.text_input("Finnhub Key (Live Surprises):", type="password")
-        fred_key = st.text_input("FRED Key (Historical Charts & Momentum):", type="password")
+        fred_key = st.text_input("FRED Key (Powers Models 1 & 2):", type="password") # --- NO MORE FINNHUB ---
         
         st.divider()
         st.subheader("Dashboard Settings")
@@ -191,51 +181,80 @@ with st.sidebar:
         
         submit_button = st.form_submit_button("⚡ Apply Settings & Fetch Data")
 
-    # Map the selected variables outside the form so the main engine can read them
     cftc_ticker = ASSET_MAPPING[selected_asset]["cftc"]
     yf_ticker = ASSET_MAPPING[selected_asset]["yf"]
     opt_ticker = ASSET_MAPPING[selected_asset]["opt"]
+    
+    # --- NEW: MANUAL FORECAST EDITOR ---
+    st.divider()
+    with st.expander("📝 Edit Manual Forecasts"):
+        st.caption("Update your baseline estimates. Changes save locally to JSON.")
+        
+        current_forecasts = forecast_manager.load_forecasts()
+        new_forecasts = {}
+        
+        with st.form("forecast_editor_form"):
+            for metric, current_val in current_forecasts.items():
+                new_forecasts[metric] = st.number_input(f"{metric} Est:", value=float(current_val), step=0.1)
+            
+            save_clicked = st.form_submit_button("💾 Save Forecasts to Disk")
+            
+            if save_clicked:
+                forecast_manager.save_forecasts(new_forecasts)
+                st.success("Locked in! Click 'Apply Settings' above to refresh the dashboard.")
 
 
 # --- MAIN APP ROUTING (TABS) ---
-if finnhub_key and fred_key:
+if fred_key: # --- NO MORE FINNHUB GATEKEEPER ---
     tab_surprises, tab_momentum, tab_charts = st.tabs([
         "⚡ Model 1: Wall St Surprises", 
         "🌊 Model 2: Structural Momentum", 
         "📈 Historical Charts"
     ])
     
-    # Compile the Global Data Arrays
     with st.spinner("Compiling multi-model quantitative data..."):
         try:
             # 1. Base Logic
             cot = get_cached_cot(cftc_ticker)
             tech = get_cached_technicals(yf_ticker, opt_ticker, selected_asset)
             yield_data = get_cached_yield()
-            
-            # 2. Build Finnhub Dictionary (Model 1)
-            finnhub_macro = get_cached_macro(finnhub_key)
-            finnhub_macro["10 Yr Yield (21d SMA)"] = {
-                "value": yield_data["value"], "difference": yield_data["difference"], "forecast": yield_data["sma"]
-            }
 
-            # 3. Build FRED Dictionary (Model 2)
-            # FIX 3: Pull data once securely, then slice it locally in memory
+            # 2. Pull FRED Historical Data
             all_hist_full = get_cached_history(fred_key) 
-            
-            # (Delete the 'df_claims.resample' block that was right here)
-            
             all_hist = {k: v.tail(max(history_bar, 3)) for k, v in all_hist_full.items()}
             
-            fred_macro = {}
             mapping_keys = {
                 "GDP Growth QoQ": "GDP Growth QoQ (%)", "Retail Sales MoM": "Retail Sales MoM (%)",
-                "Consumer Confidence": "Consumer Confidence", "CPI YoY": "CPI YoY (%)",
+                "Personal Income MoM": "Personal Income MoM (%)", "CPI YoY": "CPI YoY (%)",
                 "PPI YoY": "PPI YoY (%)", "PCE YoY": "PCE YoY (%)",
                 "Non-Farm Payroll": "Non-Farm Payroll (k)", "Unemployment Rate %": "Unemployment Rate (%)",
                 "Weekly Jobless Claims": "Weekly Jobless Claims (k)", "JOLTS Job Openings": "JOLTS Openings (M)"
             }
             
+            # --- NEW: COMPILE CUSTOM MODEL 1 (FRED ACTUALS VS JSON FORECASTS) ---
+            my_forecasts = forecast_manager.load_forecasts()
+            custom_model_1 = {}
+            
+            for standard_name, fred_name in mapping_keys.items():
+                df = all_hist_full.get(fred_name, pd.DataFrame()) 
+                if not df.empty:
+                    actual_value = round(df['Value'].iloc[-1], 2)
+                    manual_est = float(my_forecasts.get(standard_name, 0.0))
+                    
+                    custom_model_1[standard_name] = {
+                        "value": actual_value, 
+                        "difference": round(actual_value - manual_est, 2), 
+                        "forecast": manual_est
+                    }
+                else:
+                    custom_model_1[standard_name] = {"value": "N/A", "difference": 0, "forecast": "N/A"}
+
+            custom_model_1["10 Yr Yield (21d SMA)"] = {
+                "value": yield_data["value"], "difference": yield_data["difference"], "forecast": yield_data["sma"]
+            }
+            
+            # --- COMPILE MODEL 2 (STRUCTURAL MOMENTUM) ---
+            fred_macro = {}
             for standard_name, fred_name in mapping_keys.items():
                 df = all_hist.get(fred_name, pd.DataFrame())
                 if not df.empty and len(df) >= 2:
@@ -253,8 +272,9 @@ if finnhub_key and fred_key:
 
             # --- RENDER TAB 1 ---
             with tab_surprises:
-                st.markdown(f"### Finnhub Surprise Analysis: **{selected_asset}**")
-                render_dashboard(finnhub_macro, tech, cot, selected_asset, mode="Surprise")
+                st.markdown(f"### Custom Surprise Analysis: **{selected_asset}**")
+                # Now passing your Custom Model instead of Finnhub
+                render_dashboard(custom_model_1, tech, cot, selected_asset, mode="Surprise")
                 
             # --- RENDER TAB 2 ---
             with tab_momentum:
@@ -273,15 +293,11 @@ if finnhub_key and fred_key:
             st.markdown(f"**{title}**")
             if not df.empty: 
                 chart_data = df.reset_index()
-                
-                # 1. We removed the rigid size=45 parameter so the bars can flex
                 chart = alt.Chart(chart_data).mark_bar(
                     color="#2962FF", 
                     cornerRadiusTopLeft=4, 
                     cornerRadiusTopRight=4
                 ).encode(
-                    # Changed from 'yearmonth' to 'yearmonthdate'
-                    # Added '%d' to the format to show the exact day on the label
                     x=alt.X('yearmonthdate(Date):O', 
                             title=None, 
                             axis=alt.Axis(format="%Y %b %d", labelAngle=-45, grid=False),
@@ -292,7 +308,6 @@ if finnhub_key and fred_key:
                 ).properties(
                     height=350
                 )
-                
                 st.altair_chart(chart, use_container_width=True)
             else: 
                 st.info("Awaiting sufficient historical data.")
@@ -309,7 +324,7 @@ if finnhub_key and fred_key:
         g1, g2, g3 = st.columns(3)
         with g1: render_chart("GDP Growth QoQ (%)", all_hist.get("GDP Growth QoQ (%)", pd.DataFrame()))
         with g2: render_chart("Retail Sales MoM (%)", all_hist.get("Retail Sales MoM (%)", pd.DataFrame()))
-        with g3: render_chart("Consumer Confidence", all_hist.get("Consumer Confidence", pd.DataFrame()))
+        with g3: render_chart("Personal Income MoM (%)", all_hist.get("Personal Income MoM (%)", pd.DataFrame()))
         
         st.divider()
         st.subheader("💼 Labor Market")
@@ -320,4 +335,4 @@ if finnhub_key and fred_key:
         with j4: render_chart("JOLTS Openings (M)", all_hist.get("JOLTS Openings (M)", pd.DataFrame()))
 
 else:
-    st.info("👈 Please enter both your Finnhub and FRED API keys in the sidebar and click **Apply Settings** to begin.")
+    st.info("👈 Please enter your FRED API key in the sidebar and click **Apply Settings** to begin.")

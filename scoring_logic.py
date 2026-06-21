@@ -122,14 +122,13 @@ def evaluate_bias(asset, metric_name, difference, current_value=None, ffr_val=No
     elif metric_name in ["Net Change (WoW)", "4H / Daily Trend", "Seasonality Trend"]:
         if difference > 0: return "Bullish", BULLISH
         elif difference < 0: return "Bearish", BEARISH
-
 # --- 6. SYSTEM LIQUIDITY BLOCK ---
     elif metric_name == "US Net Liquidity (B)":
         if difference > 0:
-            if asset in usd or asset in metals: return "Bearish", BEARISH
-            if asset in equities or asset in energy or asset in bonds: return "Bullish", BULLISH 
+            if asset in usd: return "Bearish", BEARISH
+            if asset in equities or asset in energy or asset in bonds or asset in metals: return "Bullish", BULLISH 
         elif difference < 0:
-            if asset in usd or asset in metals: return "Bullish", BULLISH
-            if asset in equities or asset in energy or asset in bonds: return "Bearish", BEARISH
+            if asset in usd: return "Bullish", BULLISH
+            if asset in equities or asset in energy or asset in bonds or asset in metals: return "Bearish", BEARISH
 
     return "Neutral", NEUTRAL

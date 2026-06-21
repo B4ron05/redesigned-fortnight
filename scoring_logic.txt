@@ -35,24 +35,14 @@ def evaluate_bias(asset, metric_name, difference, current_value=None, ffr_val=No
             if asset in equities or asset in metals or asset in bonds: return "Bullish", BULLISH
             if asset in usd: return "Bearish", BEARISH
 
-    # --- 1. GROWTH & CONSUMPTION BLOCK ---
-    elif metric_name in ["GDP Growth QoQ", "Retail Sales MoM", "Personal Income MoM", "Personal Spending MoM", "Michigan Consumer Sentiment", "Manufacturing PMI", "Services PMI"]:
+    # --- 1. GROWTH & CONSUMPTION BLOCK (Changed to 'elif') ---
+    elif metric_name in ["GDP Growth QoQ", "Retail Sales MoM", "Personal Income MoM","Manufacturing PMI", "Services PMI"]:
         if difference > 0:
             if asset in equities or asset in energy or asset in usd: return "Bullish", BULLISH
             if asset in metals or asset in bonds: return "Bearish", BEARISH
         elif difference < 0:
             if asset in equities or asset in energy or asset in usd: return "Bearish", BEARISH
             if asset in metals or asset in bonds: return "Bullish", BULLISH
-            
-    # --- 1.b. INVERSE CONSUMER BLOCK (Savings) ---
-    elif metric_name == "Personal Savings Rate":
-        # Rising savings = cash hoarding / less spending -> Bearish for Growth Assets
-        if difference > 0:
-            if asset in usd: return "Bearish", BEARISH
-            if asset in metals or asset in bonds or asset in equities or asset in energy: return "Bullish", BULLISH
-        elif difference < 0:
-            if asset in usd: return "Bullish", BULLISH
-            if asset in metals or asset in bonds or asset in equities or asset in energy: return "Bearish", BEARISH
 
     # --- 2. INFLATION BLOCK ---
     elif metric_name in ["CPI YoY", "PPI YoY", "PCE YoY"]:

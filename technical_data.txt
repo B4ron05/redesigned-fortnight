@@ -10,24 +10,16 @@ def fetch_technicals_and_sentiment(ticker, opt_ticker, asset_name):
         "Fear & Greed Index": {"value": "N/A", "difference": 0, "retail_long": 0, "retail_short": 0}
     }
 
-# 1. 4H / Daily Trend (50 SMA)
+    # 1. 4H / Daily Trend (50 SMA)
     try:
         tk = yf.Ticker(ticker)
         hist = tk.history(period="6mo")
         if not hist.empty:
-            
-            # --- THE FIX: Scrub out any 'NaN' placeholder rows from yfinance ---
-            hist = hist.dropna(subset=['Close'])
-            
-            # Make sure we actually have 50 days of data to calculate a 50 SMA!
-            if len(hist) >= 50:
-                current_price = hist['Close'].iloc[-1]
-                sma_50 = hist['Close'].rolling(window=50).mean().iloc[-1]
-                delta = round(current_price - sma_50, 2)
-                results["4H / Daily Trend"] = {"value": round(current_price, 2), "difference": delta}
-    except Exception as e:
-        print(f"Trend Error: {e}")
-        pass
+            current_price = hist['Close'].iloc[-1]
+            sma_50 = hist['Close'].rolling(window=50).mean().iloc[-1]
+            delta = round(current_price - sma_50, 2)
+            results["4H / Daily Trend"] = {"value": round(current_price, 2), "difference": delta}
+    except: pass
 
 # 2. Seasonality Trend (10-Year Historical Average)
     try:

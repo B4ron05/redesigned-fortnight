@@ -7,8 +7,6 @@ DEFAULT_FORECASTS = {
     "GDP Growth QoQ": 0.0,
     "Retail Sales MoM": 0.0,
     "Personal Income MoM": 0.0,
-    "Personal Spending MoM": 0.0, # <--- NEW
-    "Personal Savings Rate": 0.0,  # <--- NEW
     "CPI YoY": 0.0,
     "PPI YoY": 0.0,
     "PCE YoY": 0.0,
@@ -17,16 +15,13 @@ DEFAULT_FORECASTS = {
     "Weekly Jobless Claims": 0.0,
     "JOLTS Job Openings": 0.0,
     "US Net Liquidity (B)": 0.0,
-    "Fed Funds Rate": 0.0,  
+    "Fed Funds Rate": 0.0,  # <--- THIS ALLOWS YOUR 3.62 OVERRIDE TO LOAD
     "Manufacturing PMI Forecast": 50.0,
     "Manufacturing PMI Actual": 50.0,
     "Manufacturing PMI Previous": 50.0,
     "Services PMI Forecast": 50.0,
     "Services PMI Actual": 50.0,
-    "Services PMI Previous": 50.0,
-    "Michigan Consumer Sentiment Forecast": 70.0, # <--- NEW
-    "Michigan Consumer Sentiment Actual": 70.0,   # <--- NEW
-    "Michigan Consumer Sentiment Previous": 70.0  # <--- NEW
+    "Services PMI Previous": 50.0
 }
 
 def load_forecasts():

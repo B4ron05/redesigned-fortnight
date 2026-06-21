@@ -1,0 +1,15 @@
+    metrics = {
+        "GDP Growth QoQ (%)": {"id": "GDPC1", "units": "pch", "divide": 1},
+        "Retail Sales MoM (%)": {"id": "RSAFS", "units": "pch", "divide": 1},      
+        "Personal Income MoM (%)": {"id": "PI", "units": "pch", "divide": 1},
+        "CPI YoY (%)": {"id": "CPIAUCSL", "units": "pc1", "divide": 1},             
+        "PPI YoY (%)": {"id": "PPIFIS", "units": "pc1", "divide": 1},
+        "PCE YoY (%)": {"id": "PCEPI", "units": "pc1", "divide": 1},             
+        "2 Yr Yield (%)": {"id": "GS2", "units": "lin", "divide": 1},         
+        "2 Yr Yield Daily (%)": {"id": "DGS2", "units": "lin", "divide": 1},  
+        "Fed Funds Rate (%)": {"id": "FEDFUNDS", "units": "lin", "divide": 1}, # <--- RESTORES THE API DATA
+        "Non-Farm Payroll (k)": {"id": "PAYEMS", "units": "chg", "divide": 1},      
+        "Unemployment Rate (%)": {"id": "UNRATE", "units": "lin", "divide": 1},
+        "Weekly Jobless Claims (k)": {"id": "ICSA", "units": "lin", "divide": 1000},
+        "JOLTS Openings (M)": {"id": "JTSJOL", "units": "lin", "divide": 1000}
+    }

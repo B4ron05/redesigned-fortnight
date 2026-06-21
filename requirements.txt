@@ -4,3 +4,4 @@ requests
 fredapi
 yfinance
 fear-and-gread
+altair

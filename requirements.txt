@@ -1,6 +1,0 @@
-streamlit
-pandas
-requests
-fredapi
-yfinance
-fear-and-gread
